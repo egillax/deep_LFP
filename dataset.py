@@ -14,8 +14,8 @@ class LFP_data(Dataset):
         :param transform: NotImplemented
         """
         all_data = np.load(osp.join(root_path, data_file))
-        y = all_data[:, 0]
-        all_data = all_data[:, 1:]
+        y = all_data[:, 0, 0]
+        all_data = all_data[:, :, 1:]
 
         X_train, X_test, y_train, y_test = train_test_split(all_data, y, test_size=900, stratify=y, random_state=42)
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=900, stratify=y_train,
@@ -46,7 +46,7 @@ class LFP_data(Dataset):
         #             import pdb;pdb.set_trace()
         #         data[i_subj] = mask * (data_subj - mean_subj) / std_subj
 
-        self.data = torch.from_numpy(np.expand_dims(data, axis=1)).type(torch.FloatTensor)
+        self.data = torch.from_numpy(data).type(torch.FloatTensor)
         self.labels = torch.from_numpy(labels).type(torch.LongTensor)
 
     def __len__(self):

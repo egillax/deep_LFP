@@ -24,19 +24,20 @@ def create_training_matrix(subject_data):
     sampling_freq = 422  # Hz
     num_samples = 1000
 
-    training_matrix = np.empty((len(subject_data) * num_samples, interval * sampling_freq + 1))
-    subject_indx = 0
+    training_matrix = np.empty((len(subject_data) * num_samples, interval * sampling_freq + 1, 2))
+    subject_indx = np.zeros((1, 2))
     row_indx = 0
     for key, value in subject_data.items():
         random_index = np.random.randint(0, value.shape[0] - (interval * sampling_freq), num_samples)
 
         for ix, rand in enumerate(random_index):
-            training_matrix[row_indx + ix, :] = np.concatenate((np.array((subject_indx,)),
-                                                                value[rand:rand + (interval * sampling_freq), 0]))
+            training_matrix[row_indx + ix, :, :] = np.concatenate((subject_indx,
+                                                                value[rand:rand + (interval * sampling_freq), :]))
         row_indx += num_samples
         subject_indx += 1
 
     return training_matrix
+
 
 def main():
     all_data_file = '/data/eaxfjord/deep_LFP/all_data_sessions.hdf5'
@@ -44,6 +45,8 @@ def main():
     subject_data = combine_subject_data(all_data_file)
 
     training_matrix = create_training_matrix(subject_data)
+
+    np.save('shuffled_LR.npy', training_matrix)
 
 
 if __name__ is "__main__":

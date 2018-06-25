@@ -4,6 +4,7 @@ def train_epoch(data_loader, model, criterion, optimizer, mlog
 
     for i, data in enumerate(data_loader):
         inputs, labels = data
+
         labels = labels.cuda(non_blocking=True)
         inputs = inputs.cuda(non_blocking=True)
 

@@ -8,7 +8,7 @@ import os
 from utils import EarlyStopping, save_checkpoint
 from train import train_epoch
 from validation import val_epoch
-from torchnet.logger import MeterLogger
+from my_meterlogger import MeterLogger
 from torchnet.utils import ResultsWriter
 
 
@@ -18,7 +18,7 @@ def main():
     torch.backends.cudnn.benchmark = True
 
     root_path = '/data/eaxfjord/deep_LFP'
-    matrix = 'shuffled_matrix.npy'
+    matrix = 'shuffled_LR.npy'
     batch_size = 20
 
     training_dataset = LFP_data(root_path=root_path, data_file=matrix, split='train')
@@ -29,19 +29,19 @@ def main():
     validation_loader = DataLoader(validation_set, shuffle=False, batch_size=batch_size, pin_memory=True,
                                    num_workers=1)
 
-    input_shape = (1, 2110)  # this is a hack to figure out shape of fc layer
+    input_shape = (2, 2110)  # this is a hack to figure out shape of fc layer
     net = conv1d_nn.Net(input_shape=input_shape)
     net.cuda()
 
     criterion = nn.CrossEntropyLoss()
     criterion.cuda()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=100,
-                                                     threshold=1e-9)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=200,
+                                                     threshold=1e-4)
     num_epochs = 2000
     stop_criterion = EarlyStopping()
 
-    training_log_path = '/data/eaxfjord/deep_LFP/logs/training_log_2000_epochs_test_result_writer/log'
+    training_log_path = '/data/eaxfjord/deep_LFP/logs/training_log_2000_both_channels/log'
     base_dir = os.path.dirname(training_log_path)
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
@@ -50,7 +50,7 @@ def main():
 
     result_writer = ResultsWriter(training_log_path, overwrite=True)
 
-    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title="meterlogger")
+    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title="Left and Right channels")
 
     for epoch in range(1, num_epochs+1):
         mlog.timer.reset()
@@ -78,10 +78,10 @@ def main():
         mlog.print_meter(mode="Test", iepoch=epoch)
         mlog.reset_meter(mode="Test", iepoch=epoch)
 
-        stop_criterion.eval_loss(validation_loss)
-        if stop_criterion.get_nsteps() >= 30:
-            print('Early stopping')
-            break
+        # stop_criterion.eval_loss(validation_loss)
+        # if stop_criterion.get_nsteps() >= 30:
+        #     print('Early stopping')
+        #     break
 
         scheduler.step(validation_loss)
 

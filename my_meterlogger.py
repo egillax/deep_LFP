@@ -79,7 +79,7 @@ class MeterLogger(object):
             self.meter[meter] = tnt.meter.AUCMeter()
             self.__addlogger(meter, 'line')
         elif meter == 'confusion':
-            self.meter[meter] = tnt.meter.ConfusionMeter(self.nclass, normalized=True)
+            self.meter[meter] = tnt.meter.ConfusionMeter(self.nclass, normalized=False)
             self.__addlogger(meter, 'heatmap')
 
     def update_meter(self, output, target, meters={'accuracy'}):
