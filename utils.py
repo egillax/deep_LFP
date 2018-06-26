@@ -131,16 +131,14 @@ def calc_multiclass_metrics(outputs, targets):
     return accuracy_score, precision, recall, f1_score, fbeta
 
 
-def plot_frequency_spectrum(matrix_file):
-    training_matrix = np.load(matrix_file)
-
+def plot_frequency_spectrum(matrix):
     sampling_freq = 422
 
     for i in range(10):
         # rows = np.where(training_matrix[:, 0] == 8.0)
-        rand_row = np.random.randint(0, training_matrix.shape[0])
+        rand_row = np.random.randint(0, matrix.shape[0])
         print(rand_row)
-        timeseries = training_matrix[rand_row, 1:]
+        timeseries = matrix[rand_row, 1:]
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
         ax1.plot(timeseries)
         f, fx, _ = tsa.spectral.multi_taper_psd(timeseries, Fs=sampling_freq)

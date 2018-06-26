@@ -35,9 +35,9 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     criterion.cuda()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=200,
-                                                     threshold=1e-4)
+                                                     threshold=1e-3)
     num_epochs = 2000
     stop_criterion = EarlyStopping()
 
@@ -50,7 +50,7 @@ def main():
 
     result_writer = ResultsWriter(training_log_path, overwrite=True)
 
-    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title="Left and Right channels")
+    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title="Left and Right channels with no dropout")
 
     for epoch in range(1, num_epochs+1):
         mlog.timer.reset()
@@ -82,7 +82,7 @@ def main():
         # if stop_criterion.get_nsteps() >= 30:
         #     print('Early stopping')
         #     break
-
+        print(optimizer.param_groups[0]['lr'])
         scheduler.step(validation_loss)
 
     print('Training finished', best_prec1)

@@ -40,12 +40,13 @@ def create_training_matrix(subject_data):
 
 
 def main():
-    all_data_file = '/data/eaxfjord/deep_LFP/all_data_sessions.hdf5'
+    all_data_file = '/data/eaxfjord/deep_LFP/all_data_sessions_2.hdf5'
 
     subject_data = combine_subject_data(all_data_file)
 
     training_matrix = create_training_matrix(subject_data)
-
+    training_matrix = np.swapaxes(training_matrix, -1 ,-2)
+    np.random.shuffle(training_matrix)
     np.save('shuffled_LR.npy', training_matrix)
 
 

@@ -65,6 +65,8 @@ def load_session_data(session_dir, session_name):
     all_data = np.empty((0, 2))
 
     for fname in fnames:
+        if fname == 'ocdbd7_2017_03_07_08_07_24__MR_0.xml':
+            continue
         txt_file = opj(session_dir, (fname.split('.')[0] + '.txt'))
         data = np.loadtxt(txt_file, dtype=float, delimiter=',')
         data = np.delete(data, [1, 3, 4, 5], axis=1)
@@ -80,7 +82,7 @@ def clean_hdf5():
     dbs_list = '/data/eaxfjord/deep_LFP/dbs_visits.csv'
     df = pd.read_csv(dbs_list)
     dset_names = [(subject + '/' + session) for (subject, session) in zip(df.subjects.values, df.dbs_sessions.values)]
-    hdf5_file = '/data/eaxfjord/deep_LFP/all_data_sessions.hdf5'
+    hdf5_file = '/data/eaxfjord/deep_LFP/all_data_sessions_2.hdf5'
 
     with h5py.File(hdf5_file, "a") as f:
         for i in range(len(dset_names)):
@@ -100,7 +102,7 @@ def main():
 
     subjects = [name for name in os.listdir(data_dir) if os.path.isdir(opj(data_dir, name))]
 
-    h5py_file = '/data/eaxfjord/deep_LFP/all_data_sessions.hdf5'
+    h5py_file = '/data/eaxfjord/deep_LFP/all_data_sessions_2.hdf5'
 
     visit_file = '/data/eaxfjord/deep_LFP/visits.csv'
     visits = pd.read_csv(visit_file)
@@ -123,7 +125,7 @@ def main():
                 dset = f.create_dataset((subject + '/' + session_name), data=session_data)
                 dset.attrs['summary_file'] = session_attributes['summary_file']
 
-    f.close()
+
 
 
 if __name__ is "__main__":

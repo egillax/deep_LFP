@@ -27,9 +27,9 @@ class Net(nn.Module):
         return n_size
 
     def _forward_features(self, x):
-        x = F.dropout(F.relu(self.conv1(x)), p=0.5)
-        x = F.dropout(F.relu(self.conv2(x)), p=0.5)
-        x = F.dropout(F.relu(self.conv3(x)), p=0.5)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
         return x
 
     def forward(self, x):
