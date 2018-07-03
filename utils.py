@@ -146,7 +146,7 @@ def plot_frequency_spectrum(matrix):
         plt.show()
 
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+def save_checkpoint(title, state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
+        shutil.copyfile(filename, title + '_model_best.pth.tar')

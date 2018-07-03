@@ -18,30 +18,31 @@ def main():
     torch.backends.cudnn.benchmark = True
 
     root_path = '/data/eaxfjord/deep_LFP'
-    matrix = 'shuffled_LR.npy'
+    matrix = 'shuffled_LR_1sec.npy'
     batch_size = 20
 
-    training_dataset = LFP_data(root_path=root_path, data_file=matrix, split='train')
+    training_dataset = LFP_data(root_path=root_path, data_file=matrix, split='train', standardize=True)
     training_loader = DataLoader(training_dataset, shuffle=True, batch_size=batch_size, pin_memory=True,
                                  num_workers=1)
 
-    validation_set = LFP_data(root_path=root_path, data_file=matrix, split='valid')
+    validation_set = LFP_data(root_path=root_path, data_file=matrix, split='valid', standardize=True)
     validation_loader = DataLoader(validation_set, shuffle=False, batch_size=batch_size, pin_memory=True,
                                    num_workers=1)
-
-    input_shape = (2, 2110)  # this is a hack to figure out shape of fc layer
-    net = conv1d_nn.Net(input_shape=input_shape)
+    length = 10
+    input_shape = (2, 422*length)  # this is a hack to figure out shape of fc layer
+    net = conv1d_nn.Net(input_shape=input_shape, dropout=0.4)
     net.cuda()
 
     criterion = nn.CrossEntropyLoss()
     criterion.cuda()
-    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=200,
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=100,
                                                      threshold=1e-3)
-    num_epochs = 2000
+    num_epochs = 60
     stop_criterion = EarlyStopping()
 
-    training_log_path = '/data/eaxfjord/deep_LFP/logs/training_log_2000_both_channels/log'
+    title = 'LR_4_Layer_1sec'
+    training_log_path = '/data/eaxfjord/deep_LFP/logs/' + title + '/log'
     base_dir = os.path.dirname(training_log_path)
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
@@ -50,24 +51,24 @@ def main():
 
     result_writer = ResultsWriter(training_log_path, overwrite=True)
 
-    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title="Left and Right channels with no dropout")
+    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title=title)
 
     for epoch in range(1, num_epochs+1):
         mlog.timer.reset()
 
-        mlog = train_epoch(training_loader, net, criterion, optimizer, mlog)
+        train_epoch(training_loader, net, criterion, optimizer, mlog)
 
         result_writer.update('early_stopping', {'Train': mlog.peek_meter()})
         mlog.print_meter(mode="Train", iepoch=epoch)
         mlog.reset_meter(mode="Train", iepoch=epoch)
-        validation_loss, mlog = val_epoch(validation_loader, net, criterion, mlog)
+        validation_loss = val_epoch(validation_loader, net, criterion, mlog)
 
         prec1 = mlog.meter['accuracy'].value()[0]
 
         # remember best prec@1 and save checkpoint
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
-        save_checkpoint({
+        save_checkpoint(title, {
             'epoch': epoch + 1,
             'state_dict': net.state_dict(),
             'best_prec1': best_prec1,

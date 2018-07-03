@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 class LFP_data(Dataset):
 
-    def __init__(self, root_path, data_file, split, transform=None):
+    def __init__(self, root_path, data_file, split, transform=None, standardize=None):
         """
         :param opt: Command line option(/defaults)
         :param split: train | val | test
@@ -33,18 +33,16 @@ class LFP_data(Dataset):
             data = X_test
             labels = y_test
 
-        # if opt.standardize:
-        #
-        #     mask = all_data['mask_3d']
-        #
-        #     n_subj = data.shape[0]
-        #     for i_subj in range(n_subj):
-        #         data_subj = data[i_subj]
-        #         mean_subj = data_subj[mask].mean(axis=0)
-        #         std_subj = data_subj[mask].std(axis=0)
-        #         if np.any(std_subj == 0) or np.any(np.isnan(mean_subj)) or np.any(np.isnan(std_subj)):
-        #             import pdb;pdb.set_trace()
-        #         data[i_subj] = mask * (data_subj - mean_subj) / std_subj
+        if standardize:
+
+            n_samples = data.shape[0]
+            for i_sample in range(n_samples):
+                data_sample = data[i_sample]
+                mean_sample = data_sample.mean(axis=1, keepdims=True)
+                std_sample = data_sample.std(axis=1, keepdims=True)
+                if np.any(std_sample == 0) or np.any(np.isnan(mean_sample)) or np.any(np.isnan(std_sample)):
+                    assert(std_sample == 0)
+                data[i_sample] = (data_sample - mean_sample) / std_sample
 
         self.data = torch.from_numpy(data).type(torch.FloatTensor)
         self.labels = torch.from_numpy(labels).type(torch.LongTensor)

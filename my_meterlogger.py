@@ -75,6 +75,9 @@ class MeterLogger(object):
         elif meter == 'map':
             self.meter[meter] = tnt.meter.mAPMeter()
             self.__addlogger(meter, 'line')
+        elif meter == 'ap':
+            self.meter[meter] = tnt.meter.APMeter()
+            self.__addlogger(meter, 'line')
         elif meter == 'auc':
             self.meter[meter] = tnt.meter.AUCMeter()
             self.__addlogger(meter, 'line')
@@ -98,7 +101,7 @@ class MeterLogger(object):
         loss = self.__to_tensor(loss)
         if meter not in self.meter.keys():
             self.__addloss(meter)
-        self.meter[meter].add(loss[0])
+        self.meter[meter].add(loss.item())
 
     def peek_meter(self):
         '''Returns a dict of all meters and their values.'''
@@ -138,6 +141,9 @@ class MeterLogger(object):
                 elif meter == 'auc':
                     pstr += "AUC %.3f \t"
                     tval.extend([self.meter[meter].value()])
+                elif meter == 'ap':
+                    pstr += 'AP: ' + ''.join('%i: %%.3f ' % i for i in range(self.nclass)) + '\t'
+                    tval.extend([val for val in self.meter[meter].value()])
                 else:
                     pstr += meter + " %.3f (%.3f)\t"
                     tval.extend([self.meter[meter].val, self.meter[meter].mean])
