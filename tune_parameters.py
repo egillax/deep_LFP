@@ -1,13 +1,12 @@
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 from models import conv1d_nn
-from dataset import LFP_data
+from dataset import LFPData
 from torch.utils.data import DataLoader
 import torch
 import os
 import torch.optim as optim
 import torch.nn as nn
-from train import train_epoch
-from validation import val_epoch
+from train import train_epoch, val_epoch
 
 count = 0
 

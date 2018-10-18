@@ -34,7 +34,9 @@ def load_session_data(session_dir, session_name):
             end_bool = any(substring in notes.lower() for substring in ['end', 'stop'])
             if start_bool:
                 start_index = ix
-                task_name = data_summary.iloc[ix].Notes.lower().strip('start ')
+                task_name = data_summary.iloc[ix].Notes.lower().replace('start ', '').strip()
+                if ' ' in task_name[:]:
+                    task_name = task_name[:task_name.index(' ')]
             if end_bool:
                 end_index = ix
                 start_index = []
@@ -74,7 +76,7 @@ def load_session_data(session_dir, session_name):
 
     attribute_dict = {'summary_file': data_summary_file}
 
-    return all_data, attribute_dict
+    return all_data, attribute_dict, data_summary
 
 
 def clean_hdf5():

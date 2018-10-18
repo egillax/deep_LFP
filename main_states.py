@@ -1,4 +1,4 @@
-from dataset import LFPData
+from dataset import LFPDataStates
 from torch.utils.data import DataLoader
 import torch
 from models import conv1d_nn
@@ -13,29 +13,29 @@ from torchnet.utils import ResultsWriter
 
 def main():
     best_prec1 = 0
-    test = True
+    test = False
     state_prediction = True
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     torch.backends.cudnn.benchmark = True
 
     root_path = '/data/eaxfjord/deep_LFP'
-    matrix = 'shuffled_LR_1sec_5000.npy'
+    matrix = 'state_matrix.npz'
     batch_size = 100
 
-    training_dataset = LFPData(root_path=root_path, data_file=matrix, split='train', standardize=True)
+    training_dataset = LFPDataStates(root_path=root_path, data_file=matrix, split='train', standardize=True)
     training_loader = DataLoader(training_dataset, shuffle=True, batch_size=batch_size, pin_memory=True,
                                  num_workers=1)
 
-    validation_set = LFPData(root_path=root_path, data_file=matrix, split='valid', standardize=True)
+    validation_set = LFPDataStates(root_path=root_path, data_file=matrix, split='valid', standardize=True)
     validation_loader = DataLoader(validation_set, shuffle=False, batch_size=batch_size, pin_memory=True,
                                    num_workers=1)
     length = 1
     input_shape = (2, 422 * length)  # this is a hack to figure out shape of fc layer
-    net = conv1d_nn.Net(input_shape=input_shape, dropout=0.4)
+    net = conv1d_nn.Net(input_shape=input_shape, dropout=0)
     if state_prediction:
         previous_model_weights = '/data/eaxfjord/deep_LFP/LR_4_Layer_1sec_5000_not_ind_sess_test_set_fc_dropout_model_best.pth.tar'
-        net.load_state_dict(torch.load(previous_model_weights))
+        net.load_state_dict(torch.load(previous_model_weights)['state_dict'])
         for param in net.parameters():
             param.requires_grad = False
 
@@ -53,7 +53,7 @@ def main():
     num_epochs = 200
     stop_criterion = EarlyStopping()
 
-    title = 'LR_4_Layer_1sec_5000_not_ind_sess_test_set_fc_dropout'
+    title = 'first_try_with_state_prediction'
     training_log_path = '/data/eaxfjord/deep_LFP/logs/' + title + '/log'
     base_dir = os.path.dirname(training_log_path)
     if not os.path.exists(base_dir):
@@ -63,7 +63,7 @@ def main():
 
     result_writer = ResultsWriter(training_log_path, overwrite=True)
 
-    mlog = MeterLogger(server='localhost', port=8097, nclass=9, title=title)
+    mlog = MeterLogger(server='localhost', port=8097, nclass=4, title=title)
 
     for epoch in range(1, num_epochs + 1):
         mlog.timer.reset()
@@ -101,7 +101,7 @@ def main():
     print('Training finished', best_prec1)
 
     if test:
-        test_set = LFPData(root_path=root_path, data_file=matrix, split='test', standardize=True)
+        test_set = LFPDataStates(root_path=root_path, data_file=matrix, split='test', standardize=True)
         test_loader = DataLoader(test_set, shuffle=False, batch_size=batch_size, pin_memory=True,
                                  num_workers=1)
         test_loss, test_acc = test_epoch(test_loader, net, criterion, mlog)

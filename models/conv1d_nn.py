@@ -11,7 +11,7 @@ class Net(nn.Module):
         self.conv3 = nn.Conv1d(in_channels=32, out_channels=16, kernel_size=3, stride=1)
         self.conv4 = nn.Conv1d(in_channels=16, out_channels=8, kernel_size=3, stride=1)
 
-        self.dropout = dropout
+        self.dropout = nn.Dropout(p=dropout)
         n_size = self._get_conv_output(input_shape)
 
         self.fc1 = nn.Linear(n_size, 2040)
@@ -25,15 +25,15 @@ class Net(nn.Module):
         return n_size
 
     def _forward_features(self, x):
-        x = F.dropout(F.relu(self.conv1(x)), p=self.dropout)
-        x = F.dropout(F.relu(self.conv2(x)), p=self.dropout)
-        x = F.dropout(F.relu(self.conv3(x)), p=self.dropout)
-        x = F.dropout(F.relu(self.conv4(x)), p=self.dropout)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
 
         return x
 
     def forward(self, x):
         x = self._forward_features(x)
         x = x.view(x.size(0), -1)
-        x = self.fc2(F.relu(self.fc1(x)))
+        x = self.fc2(self.dropout(F.relu(self.fc1(x))))
         return x
