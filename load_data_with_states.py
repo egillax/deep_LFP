@@ -11,11 +11,11 @@ import numpy as np
 
 def main():
     data_dir = '/data/shared/OCD_DBS_bidirectional/Ruwe_Data/LFP/'
-    hdf5_file = 'all_data_sessions_2.hdf5'
+    hdf5_file = '/data/eaxfjord/deep_LFP/data/all_sessions_cleaned.hdf5'
     with h5py.File(hdf5_file, 'r') as f:
         subjects = list(f)
 
-    visit_file = '/data/eaxfjord/deep_LFP/visits.csv'
+    visit_file = '/data/eaxfjord/deep_LFP/data/visits.csv'
     visits = pd.read_csv(visit_file)
 
     subject_dict = {}
@@ -44,7 +44,7 @@ def main():
 
             task_dict[task] = all_data
         subject_dict[subject] = task_dict
-        np.save('task_dictionary.npy', subject_dict)
+        np.save('cleaned_task_dictionary.npy', subject_dict)
 
 if __name__ is "__main__":
     main()

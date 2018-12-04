@@ -28,9 +28,8 @@ class MeterLogger(object):
         self.plotstylecombined = plotstylecombined
 
     def _ver2tensor(self, target):
-        target_mat = torch.zeros(target.shape[0], self.nclass)
-        for i, j in enumerate(target):
-            target_mat[i][j] = 1
+        target_mat = torch.cuda.FloatTensor(target.shape[0], self.nclass).fill_(0)
+        target_mat = target_mat.scatter_(1, target.view(-1, 1), 1)
         return target_mat
 
     def __to_tensor(self, var):
@@ -44,24 +43,32 @@ class MeterLogger(object):
         if ptype == 'line':
             if self.plotstylecombined:
                 opts = {'title': self.title + ' ' + meter}
-                self.logger['Train'][meter] = VisdomPlotLogger(ptype, env=self.env, server=self.server,
+                self.logger['Train'][meter] = VisdomPlotLogger(ptype, win=meter, env=self.env, server=self.server,
                                                                port=self.port, opts=opts)
                 opts = {}
                 self.logger['Test'][meter] = self.logger['Train'][meter]
             else:
                 opts = {'title': self.title + 'Train ' + meter}
-                self.logger['Train'][meter] = VisdomPlotLogger(ptype, env=self.env, server=self.server,
+                self.logger['Train'][meter] = VisdomPlotLogger(ptype, win=meter, env=self.env, server=self.server,
                                                                port=self.port, opts=opts)
                 opts = {'title': self.title + 'Test ' + meter}
-                self.logger['Test'][meter] = VisdomPlotLogger(ptype, env=self.env, server=self.server,
+                self.logger['Test'][meter] = VisdomPlotLogger(ptype, win=meter, env=self.env, server=self.server,
                                                               port=self.port, opts=opts)
         elif ptype == 'heatmap':
             names = list(range(self.nclass))
             opts = {'title': self.title + ' Train ' + meter, 'columnnames': names, 'rownames': names}
-            self.logger['Train'][meter] = VisdomLogger('heatmap', env=self.env, server=self.server,
+            self.logger['Train'][meter] = VisdomLogger('heatmap', win=('train_' + meter), env=self.env, server=self.server,
                                                        port=self.port, opts=opts)
             opts = {'title': self.title + ' Test ' + meter, 'columnnames': names, 'rownames': names}
-            self.logger['Test'][meter] = VisdomLogger('heatmap', env=self.env, server=self.server,
+            self.logger['Test'][meter] = VisdomLogger('heatmap', win=('test_' + meter), env=self.env, server=self.server,
+                                                      port=self.port, opts=opts)
+        elif ptype == 'bar':
+            names = list(range(self.nclass))
+            opts = {'title': self.title + 'Train ' + meter, 'rownames': names}
+            self.logger['Train'][meter] = VisdomLogger('bar', win=meter, env=self.env, server=self.server,
+                                                       port=self.port, opts=opts)
+            opts = {'title': self.title + 'Test ' + meter, 'rownames': names}
+            self.logger['Test'][meter] = VisdomLogger('bar', win=meter, env=self.env, server=self.server,
                                                       port=self.port, opts=opts)
 
     def __addloss(self, meter):

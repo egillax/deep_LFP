@@ -24,7 +24,7 @@ def train_epoch(data_loader, model, criterion, optimizer, mlog
 
         # online plotter
         mlog.update_loss(loss, meter='loss')
-        mlog.update_meter(outputs, labels, meters={'accuracy', 'map', 'confusion'})
+        mlog.update_meter(outputs, labels, meters={'accuracy', 'confusion'})
 
         optimizer.zero_grad()
         loss.backward()
@@ -46,9 +46,9 @@ def val_epoch(data_loader, model, criterion, mlog):
         loss = criterion(outputs, labels)
         accuracy = calculate_accuracy(outputs, labels)
 
-        # online ploter
+        # online plotter
         mlog.update_loss(loss, meter='loss')
-        mlog.update_meter(outputs, labels, meters={'accuracy', 'map', 'confusion'})
+        mlog.update_meter(outputs, labels, meters={'accuracy', 'confusion'})
 
         losses.update(loss.item(), inputs.size(0))
         accuracies.update(accuracy, inputs.size(0))

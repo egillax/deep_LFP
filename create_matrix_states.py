@@ -1,5 +1,5 @@
 import numpy as np
-
+import pathlib
 
 def create_training_matrix(data, interval=1, sampling_freq=422, num_samples=100):
     # exclude subject because it's missing a state
@@ -14,8 +14,8 @@ def create_training_matrix(data, interval=1, sampling_freq=422, num_samples=100)
     test_subject = subjects[np.random.randint(0, 7)]
 
     training_subjects = [x for x in subjects if x != test_subject]
-    training_matrix = np.empty(((len(training_subjects) * num_samples * num_states), interval * sampling_freq + 2, 2))
-    test_matrix = np.empty((num_samples * num_states, interval * sampling_freq + 2, 2))
+    training_matrix = np.empty(((len(training_subjects) * num_samples * num_states), np.int(interval * sampling_freq) + 2, 2))
+    test_matrix = np.empty((num_samples * num_states, np.int(interval * sampling_freq) + 2, 2))
 
     # training dataset
     train_row_indx = 0
@@ -30,7 +30,7 @@ def create_training_matrix(data, interval=1, sampling_freq=422, num_samples=100)
                 training_matrix[train_row_indx + ix, :, :] = np.concatenate((np.array([[sub_indx, sub_indx]]),
                                                                              np.array([[state_idx, state_idx]]),
                                                                              state_data[rand:rand +
-                                                                                             (interval * sampling_freq),
+                                                                                        np.int(interval * sampling_freq),
                                                                              :]))
             train_row_indx += num_samples
 
@@ -44,16 +44,18 @@ def create_training_matrix(data, interval=1, sampling_freq=422, num_samples=100)
 
         for ix, rand in enumerate(test_random_indx):
             test_matrix[test_row_indx+ix, :, :] = np.concatenate((np.array([[1, 1]]), np.array([[state_idx, state_idx]]),
-                                                    state_data[rand:rand + (interval * sampling_freq), :]))
+                                                    state_data[rand:rand + np.int(interval * sampling_freq), :]))
         test_row_indx += num_samples
 
-    np.savez('state_matrix.npz', training=training_matrix, test=test_matrix)
+    name = f'cleaned_state_matrix_{interval}sec.npz'
+    path = pathlib.Path.cwd().joinpath('data', name)
+    np.savez(path, training=training_matrix, test=test_matrix)
 
 
 def main():
-    task_dictionary = np.load('task_dictionary.npy').item()
+    task_dictionary = np.load('cleaned_task_dictionary.npy').item()
 
-    create_training_matrix(task_dictionary, interval=1, sampling_freq=422, num_samples=100)
+    create_training_matrix(task_dictionary, interval=3, sampling_freq=422, num_samples=33)
 
 
 if __name__ is "__main__":

@@ -52,13 +52,19 @@ def load_session_data(session_dir, session_name):
         data_summary['Task'] = task
 
         # locate files I'm interested in, recording from 0-3 contact points
-        fnames = data_summary[((data_summary.Ch1 == '0-3') | (data_summary.Ch1 == '3-0')) &
+        index = [((data_summary.Ch1 == '0-3') | (data_summary.Ch1 == '3-0')) &
                               (data_summary.Task != 'no_task') &
                               (data_summary.Notes != 'Test') &
                               (~data_summary.Notes.str.lower().str.startswith('Gain'.lower())) &
-                              (data_summary.Freq == 422)]['File name'].values
+                              (data_summary.Freq == 422)]
+        index = index[0][:]
+
+        [fnames, tasks] = [data_summary[index]['File name'].values, data_summary[index]['Task'].values]
+
+
     else:
         strings = 'baseline|Baseline|Wash-out|Resting state'
+
         fnames = data_summary[((data_summary.Ch1 == '0-3') | (data_summary.Ch1 == '3-0')) &
                               (data_summary.Notes != 'Test') & (data_summary.Freq == 422) &
                               (~data_summary.Notes.str.lower().str.startswith('Gain'.lower())) &
@@ -66,12 +72,15 @@ def load_session_data(session_dir, session_name):
 
     all_data = np.empty((0, 2))
 
+
+    # load data from xml files and append to matrix
     for fname in fnames:
         if fname == 'ocdbd7_2017_03_07_08_07_24__MR_0.xml':
             continue
         txt_file = opj(session_dir, (fname.split('.')[0] + '.txt'))
         data = np.loadtxt(txt_file, dtype=float, delimiter=',')
-        data = np.delete(data, [1, 3, 4, 5], axis=1)
+        data = np.delete(data, [1, 3, 4, 5], axis=1) # delete empty channels
+        data = data[1000:, :]  # remove artifact at beginning which affects about 2 seconds
         all_data = np.append(all_data, data, axis=0)
 
     attribute_dict = {'summary_file': data_summary_file}
@@ -79,18 +88,19 @@ def load_session_data(session_dir, session_name):
     return all_data, attribute_dict, data_summary
 
 
-def clean_hdf5():
+def clean_hdf5(hdf5_file):
     """Clean hdf5 file, remove dbs sessions and empty sessions"""
-    dbs_list = '/data/eaxfjord/deep_LFP/dbs_visits.csv'
+    dbs_list = '/data/eaxfjord/deep_LFP/data/dbs_visits.csv'
     df = pd.read_csv(dbs_list)
     dset_names = [(subject + '/' + session) for (subject, session) in zip(df.subjects.values, df.dbs_sessions.values)]
-    hdf5_file = '/data/eaxfjord/deep_LFP/all_data_sessions_2.hdf5'
 
+    # remove sessions with dbs
     with h5py.File(hdf5_file, "a") as f:
         for i in range(len(dset_names)):
             print(dset_names[i])
             del f[dset_names[i]]
 
+    # remove sessions with other issues.
     with h5py.File(hdf5_file, 'a') as f:
         del f['ocdbd3/Session_2015_11_17_Tuesday']
         del f['ocdbd7/Session_2017_03_06_Monday']
@@ -104,9 +114,9 @@ def main():
 
     subjects = [name for name in os.listdir(data_dir) if os.path.isdir(opj(data_dir, name))]
 
-    h5py_file = '/data/eaxfjord/deep_LFP/all_data_sessions_2.hdf5'
+    h5py_file = '/data/eaxfjord/deep_LFP/data/all_sessions_cleaned.hdf5'
 
-    visit_file = '/data/eaxfjord/deep_LFP/visits.csv'
+    visit_file = '/data/eaxfjord/deep_LFP/data/visits.csv'
     visits = pd.read_csv(visit_file)
 
     with h5py.File(h5py_file, "w") as f:
@@ -122,11 +132,12 @@ def main():
                     session_name = 'visit_1'
                 else:
                     session_name = session
-                session_data, session_attributes = load_session_data(session_dir, session_name)
+                session_data, session_attributes, summary_data = load_session_data(session_dir, session_name)
                 print(session_dir, session_data.shape)
                 dset = f.create_dataset((subject + '/' + session_name), data=session_data)
                 dset.attrs['summary_file'] = session_attributes['summary_file']
 
+    clean_hdf5(h5py_file)
 
 
 
